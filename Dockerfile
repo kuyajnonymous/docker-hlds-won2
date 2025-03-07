@@ -56,8 +56,3 @@ ENV TERM xterm
 
 ENTRYPOINT ["./hlds_run"]
 CMD ["-game", "cstrike", "+map", "de_dust2", "+maxplayers", "16"]
-
-
-i want to move the extracted cstrike locally to /opt/hlds_l/cstrike
-
-
