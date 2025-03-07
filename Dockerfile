@@ -20,13 +20,11 @@ USER hlds
 # RUN tar -xzf /server/hlds_l_3111e_update.tar.gz -C /server
 # RUN rm /server/hlds_l_3111e_update.tar.gz
 
-# 3) Download and extract valve patch
-RUN wget -q -O /tmp/valve.zip https://cs.techpinoy.net/valve.zip && \
-    mkdir -p /server/hlds_l/valve && \
-    unzip -q /tmp/valve.zip -d /server/hlds_l/ && \
-    rm /tmp/valve.zip
-
-
+# Download and extract valve.tar.gz into /server/hlds_l/
+RUN wget -q -O /tmp/valve.tar.gz https://cs.techpinoy.net/files/valve.tar.gz && \
+    mkdir -p /server/hlds_l/ && \
+    tar -xzf /tmp/valve.tar.gz -C /server/hlds_l/ && \
+    rm /tmp/valve.tar.gz
 
 WORKDIR /server/hlds_l/
 
@@ -35,7 +33,7 @@ USER root
 
 COPY patch/* ./
 COPY config/valve ./valve
-RUN chmod +x hlds_run
+RUN chmod +x hlds*
 
 # Then, remove mod folders
 RUN rm -rf ./tfc
