@@ -1,29 +1,19 @@
-version: "3.0"
+version: '3.8'
 
 services:
-
-  # This is the base image we build
-  hlds-build:
-    build: .
-    image: "hlds1110"
-    container_name: hlds1110-build
-
-  hlds:
-    image: "hlds1110"
-    restart: always
-    user: "1000:1000" # <- Change this to your UID:GID
+  debian32:
+    image: "hlds3109:latest"
+    container_name: hlds3109cs13
+    restart: unless-stopped
+    user: "0:0"  # Run as root (consider using a non-root user for security)
+    tty: true
+    stdin_open: true
     volumes:
-      - ./config/cstrike:/server/hlds_l/cstrike 
-      - ./config/cstrk10r:/server/hlds_l/cstrk10r
-      - ./config/cstrk11r:/server/hlds_l/cstrk11r
-      - ./config/cstrk13:/server/hlds_l/cstrk13 
-      - ./config/cstrk71:/server/hlds_l/cstrk71
-      - ./config/dmc:/server/hlds_l/dmc 
-      - ./config/tfc:/server/hlds_l/tfc
+      - /opt/hlds3109/hlds_l/cstrike:/server/hlds_l/cstrike #replace with your game mode path
     ports:
-      - 27015:27015
-      - 27015:27015/udp
-    command:
-      - -port 27015 -game cstrike +map de_dust2 +maxplayers 16
+      - "27015:27015/tcp"
+      - "27015:27015/udp"
+    command: >
+      ./hlds_run -port 27015 -game cstrike +map de_dust2 +maxplayers 16 -noauth -insecure +sv_lan 1
     security_opt:
       - no-new-privileges:1
