@@ -1,4 +1,9 @@
 # docker-hlds-won2
+fork update:
+changed version to 3.1.0.9/1.1.0.9
+changed. how 3.1.0.9/1.1.0.9 installation process
+added more libraries/files in patch folders
+
 
 [![](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://patreon.baseq.fr)
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/P5P27UZHV)
