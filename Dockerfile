@@ -1,50 +1,49 @@
-FROM i386/debian:8-slim
+FROM i386/debian
 
-# Force Debian 8 installation!
-RUN echo "deb http://archive.debian.org/debian jessie main contrib non-free" > /etc/apt/sources.list
+# Force Debian 8 installation (if needed)
+# RUN echo "deb http://archive.debian.org/debian jessie main contrib non-free" > /etc/apt/sources.list && \
+#     apt-get update -o Acquire::Check-Valid-Until=false
 
-# 1) Install dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget libc6 libstdc++6 --force-yes
+# Install dependencies
+RUN apt-get update -o Acquire::Check-Valid-Until=false && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    wget curl libc6 libstdc++6 gcc make ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 2) Create user
-RUN groupadd -r hlds
-RUN useradd --no-log-init --system --create-home --home-dir /server --gid hlds  hlds
+# Create user
+RUN groupadd -r hlds && useradd --no-log-init --system --create-home --home-dir /server --gid hlds hlds
 USER hlds
 
-# 3) Install HLDS 3.1.1.1 and 3.1.1.e
-# RUN wget -q -O -  https://archive.org/download/hlds_l_3111_full_202503/hlds_l_3111_full.bin | \
-#   tail -c+8338 | head -c121907818 | \
-#   tar -xzf - -C /server
-
-# COPY install/hlds_l_3111e_update.tar.gz /server 
-# RUN tar -xzf /server/hlds_l_3111e_update.tar.gz -C /server
-# RUN rm /server/hlds_l_3111e_update.tar.gz
-
-# Download and extract valve.tar.gz into /server/hlds_l/
-RUN wget -q -O /tmp/valve.tar.gz https://archive.org/download/hlds_l_3111_full_202503/valve.tar.gz && \
+# Download and extract HLDS
+RUN curl -L -o /tmp/hlds_l_3109_full.tar.gz https://archive.org/download/hlds_l_3111_full/hlds_l_3109_full.tar.gz && \
     mkdir -p /server/hlds_l/ && \
-    tar -xzf /tmp/valve.tar.gz -C /server/hlds_l/ && \
-    rm /tmp/valve.tar.gz
+    tar -xzf /tmp/hlds_l_3109_full.tar.gz -C /server/ && \
+    rm /tmp/hlds_l_3109_full.tar.gz
 
 WORKDIR /server/hlds_l/
 
-#Install WON2Fixes and modified HLDS_RUN
+# Install WON2Fixes and modified HLDS_RUN
 USER root
-
-COPY patch/* ./
+# COPY patch/* ./
 COPY config/valve ./valve
 RUN chmod +x hlds*
 
-# Then, remove mod folders
-RUN rm -rf ./tfc
-RUN rm -rf ./dmc
-RUN rm -rf ./ricochet
-RUN rm -rf ./cstrike
+# Remove unnecessary mod folders
+RUN rm -rf ./tfc ./dmc ./ricochet ./cstrike
+
+# 4) Create nowon.c file, compile, and link it
+RUN echo 'int NET_IsReservedAdr(){return 1;}' > /server/hlds_l/nowon.c && \
+    gcc -fPIC -c /server/hlds_l/nowon.c -o /server/hlds_l/nowon.o && \
+    ld -shared -o /server/hlds_l/nowon.so /server/hlds_l/nowon.o && \
+    rm -f /server/hlds_l/nowon.c /server/hlds_l/nowon.o
+
+# 5) Modify hlds_run to include LD_PRELOAD
+RUN sed -i '/^export /a export LD_PRELOAD="nowon.so"' /server/hlds_l/hlds_run
 
 USER hlds
 
 ENV TERM xterm
 
 ENTRYPOINT ["./hlds_run"]
-
-CMD ["-game valve", "+map crossfire", "+maxplayers 16"]
+CMD ["-game", "valve", "+map", "crossfire", "+maxplayers", "16"]
